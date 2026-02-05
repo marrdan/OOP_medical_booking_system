@@ -10,7 +10,7 @@ import java.util.Properties;
 
 public class PostegresDB implements IDB {
 
-    private static PostegresDB instance; // единственный экземпляр
+    private static PostegresDB instance;
 
     private final String URL =
             "jdbc:postgresql://aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require";
