@@ -66,6 +66,22 @@ public class Main {
                         System.out.println("2. Urgent");
                         int typeChoice = Integer.parseInt(sc.nextLine());
 
+                        boolean patientExists = patientsList.stream()
+                                .anyMatch(pat -> pat.getId() == p);
+
+                        boolean doctorExists = doctorsList.stream()
+                                .anyMatch(doc -> doc.getId() == d);
+
+                        if (!patientExists) {
+                            System.out.println("Patient not found!");
+                            break;
+                        }
+                        if (!doctorExists) {
+                            System.out.println("Doctor not found!");
+                            break;
+                        }
+
+
                         AppointmentFactory factory;
                         if (typeChoice == 1) factory = new BookedAppointmentFactory();
                         else if (typeChoice == 2) factory = new UrgentAppointmentFactory();
@@ -132,6 +148,21 @@ public class Main {
                         int p = Integer.parseInt(sc.nextLine());
                         System.out.print("Doctor ID: ");
                         int d = Integer.parseInt(sc.nextLine());
+                        boolean patientExists = patientsList.stream()
+                                .anyMatch(pat -> pat.getId() == p);
+
+                        boolean doctorExists = doctorsList.stream()
+                                .anyMatch(doc -> doc.getId() == d);
+
+                        if (!patientExists) {
+                            System.out.println("Patient not found!");
+                            break;
+                        }
+                        if (!doctorExists) {
+                            System.out.println("Doctor not found!");
+                            break;
+                        }
+
 
                         UrgentBookingService urgentService = new UrgentBookingService(
                                 repo, availability, new UrgentAppointmentFactory()

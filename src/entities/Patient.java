@@ -12,8 +12,6 @@ public class Patient {
     }
 
     public int getId() { return id; }
-
-
     @Override
     public String toString() {
         return id + " " + patient_name + " " + phone;

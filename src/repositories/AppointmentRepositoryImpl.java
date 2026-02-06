@@ -19,7 +19,6 @@ public class AppointmentRepositoryImpl implements AppointmentRepository, Reposit
         this.db = db;
     }
 
-    // AppointmentRepository методы
 
     @Override
     public void save(Appointment a) {
@@ -79,7 +78,6 @@ public class AppointmentRepositoryImpl implements AppointmentRepository, Reposit
         }
     }
 
-    // Repository<Appointment> methods
 
     @Override
     public void delete(int id) {

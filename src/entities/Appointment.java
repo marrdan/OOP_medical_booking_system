@@ -10,13 +10,8 @@ public class Appointment {
     private LocalDateTime time;
     private String status;
 
-    private Appointment() {
-        // приватный конструктор, объекты создаются через Builder
-    }
+    private Appointment() {}
 
-    // --------------------------
-    // Геттеры
-    // --------------------------
     public int getId() { return id; }
     public int getPatientId() { return patientId; }
     public int getDoctorId() { return doctorId; }
@@ -36,9 +31,6 @@ public class Appointment {
                 '}';
     }
 
-    // --------------------------
-    // Builder
-    // --------------------------
     public static class Builder {
         private final Appointment appointment;
 
@@ -72,7 +64,6 @@ public class Appointment {
         }
 
         public Appointment build() {
-            // Проверяем обязательные поля
             if (appointment.patientId == 0 || appointment.doctorId == 0 || appointment.time == null) {
                 throw new IllegalStateException("Patient, doctor, and time must be set");
             }
