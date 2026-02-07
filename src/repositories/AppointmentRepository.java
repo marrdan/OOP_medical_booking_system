@@ -12,4 +12,3 @@ public interface AppointmentRepository {
     List<Appointment> findByPatient(int patientId);
     boolean exists(int doctorId, LocalDateTime time);
 }
-

@@ -58,6 +58,7 @@ public class AppointmentRepositoryImpl implements AppointmentRepository, Reposit
     @Override
     public List<Appointment> findByPatient(int patientId) {
         return findByField("patient_id", patientId);
+
     }
 
     @Override
