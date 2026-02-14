@@ -61,23 +61,28 @@ public class AppointmentRepositoryImpl implements AppointmentRepository, Reposit
 
     }
 
+
     @Override
     public boolean exists(int doctorId, LocalDateTime time) {
         String sql = """
-            SELECT 1 FROM appointments
-            WHERE doctor_id=? AND appointment_time=? AND status='BOOKED'
-        """;
+        SELECT 1 FROM appointments
+        WHERE doctor_id=? 
+        AND appointment_time=? 
+        AND status IN ('BOOKED','URGENT')
+    """;
 
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, doctorId);
-            ps.setTimestamp(2, Timestamp.valueOf(time));
+            ps.setTimestamp(2, Timestamp.valueOf(time.withSecond(0).withNano(0)));
+
             return ps.executeQuery().next();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
 
 
     @Override

@@ -8,14 +8,12 @@ import exceptions.TimeSlotAlreadyBookedException;
 import factories.BookedAppointmentFactory;
 import factories.UrgentAppointmentFactory;
 import factories.AppointmentFactory;
-import repositories.AppointmentRepository;
-import repositories.AppointmentRepositoryImpl;
+import repositories.*;
 import services.AppointmentService;
 import services.DoctorAvailabilityService;
 import services.UrgentBookingService;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -27,10 +25,10 @@ public class Main {
         DoctorAvailabilityService availability = new DoctorAvailabilityService(repo);
         AppointmentService service = new AppointmentService(repo, availability);
 
-        Scanner sc = new Scanner(System.in);
+        PatientRepository patientRepo = new PatientRepositoryImpl(PostegresDB.getInstance());
+        DoctorRepository doctorRepo = new DoctorRepositoryImpl(PostegresDB.getInstance());
 
-        List<Patient> patientsList = new ArrayList<>();
-        List<Doctor> doctorsList = new ArrayList<>();
+        Scanner sc = new Scanner(System.in);
 
         while (true) {
             System.out.println("""
@@ -54,6 +52,7 @@ public class Main {
             }
 
             switch (choice) {
+
                 case 1 -> {
                     try {
                         System.out.print("Patient ID: ");
@@ -61,26 +60,22 @@ public class Main {
                         System.out.print("Doctor ID: ");
                         int d = Integer.parseInt(sc.nextLine());
 
-                        System.out.println("Select appointment type: ");
-                        System.out.println("1. Normal");
-                        System.out.println("2. Urgent");
-                        int typeChoice = Integer.parseInt(sc.nextLine());
+                        Patient patient = patientRepo.findById(p);
+                        Doctor doctor = doctorRepo.findById(d);
 
-                        boolean patientExists = patientsList.stream()
-                                .anyMatch(pat -> pat.getId() == p);
-
-                        boolean doctorExists = doctorsList.stream()
-                                .anyMatch(doc -> doc.getId() == d);
-
-                        if (!patientExists) {
+                        if (patient == null) {
                             System.out.println("Patient not found!");
                             break;
                         }
-                        if (!doctorExists) {
+                        if (doctor == null) {
                             System.out.println("Doctor not found!");
                             break;
                         }
 
+                        System.out.println("Select appointment type: ");
+                        System.out.println("1. Normal");
+                        System.out.println("2. Urgent");
+                        int typeChoice = Integer.parseInt(sc.nextLine());
 
                         AppointmentFactory factory;
                         if (typeChoice == 1) factory = new BookedAppointmentFactory();
@@ -90,11 +85,16 @@ public class Main {
                             factory = new BookedAppointmentFactory();
                         }
 
-                        Appointment appointment = factory.create(p, d,
-                                typeChoice == 1 ? LocalDateTime.now().plusDays(1) : LocalDateTime.now().plusHours(1));
+                        LocalDateTime time = (typeChoice == 1
+                                ? LocalDateTime.now().plusDays(1)
+                                : LocalDateTime.now().plusHours(1))
+                                .withSecond(0).withNano(0);
+
+                        Appointment appointment = factory.create(p, d, time);
 
                         service.book(appointment);
                         System.out.println("Appointment booked successfully! Type: " + appointment.getStatus());
+
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid input! Please enter a number.");
                     } catch (TimeSlotAlreadyBookedException | DoctorUnavailableException e) {
@@ -120,7 +120,6 @@ public class Main {
                         int d = Integer.parseInt(sc.nextLine());
                         List<Appointment> schedule = service.doctorSchedule(d);
                         schedule.stream()
-                                .filter(a -> "BOOKED".equals(a.getStatus()))
                                 .sorted((a1, a2) -> a1.getTime().compareTo(a2.getTime()))
                                 .forEach(System.out::println);
                     } catch (NumberFormatException e) {
@@ -148,27 +147,25 @@ public class Main {
                         int p = Integer.parseInt(sc.nextLine());
                         System.out.print("Doctor ID: ");
                         int d = Integer.parseInt(sc.nextLine());
-                        boolean patientExists = patientsList.stream()
-                                .anyMatch(pat -> pat.getId() == p);
 
-                        boolean doctorExists = doctorsList.stream()
-                                .anyMatch(doc -> doc.getId() == d);
+                        Patient patient = patientRepo.findById(p);
+                        Doctor doctor = doctorRepo.findById(d);
 
-                        if (!patientExists) {
+                        if (patient == null) {
                             System.out.println("Patient not found!");
                             break;
                         }
-                        if (!doctorExists) {
+                        if (doctor == null) {
                             System.out.println("Doctor not found!");
                             break;
                         }
-
 
                         UrgentBookingService urgentService = new UrgentBookingService(
                                 repo, availability, new UrgentAppointmentFactory()
                         );
                         Appointment urgent = urgentService.bookNextAvailable(p, d);
                         System.out.println("Urgent appointment booked at: " + urgent.getTime());
+
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid input! Please enter a number.");
                     } catch (TimeSlotAlreadyBookedException | DoctorUnavailableException e) {
@@ -188,9 +185,9 @@ public class Main {
                             System.out.print("Phone: ");
                             String phone = sc.nextLine();
 
-                            Patient patient = new Patient(patientsList.size() + 1, name, phone);
-                            patientsList.add(patient);
-                            System.out.println("Patient added: " + patient);
+                            Patient patient = new Patient(0, name, phone);
+                            patientRepo.save(patient);
+                            System.out.println("Patient added: " + name);
                         }
                         case 2 -> {
                             System.out.print("Doctor name: ");
@@ -198,9 +195,9 @@ public class Main {
                             System.out.print("Specialization: ");
                             String spec = sc.nextLine();
 
-                            Doctor doctor = new Doctor(doctorsList.size() + 1, name, spec);
-                            doctorsList.add(doctor);
-                            System.out.println("Doctor added: " + doctor);
+                            Doctor doctor = new Doctor(0, name, spec);
+                            doctorRepo.save(doctor);
+                            System.out.println("Doctor added: " + name);
                         }
                         default -> System.out.println("Unknown option!");
                     }
@@ -208,12 +205,14 @@ public class Main {
 
                 case 7 -> {
                     System.out.println("All patients:");
-                    if (patientsList.isEmpty()) System.out.println("No patients added yet.");
-                    else patientsList.forEach(System.out::println);
+                    List<Patient> allPatients = patientRepo.findAll();
+                    if (allPatients.isEmpty()) System.out.println("No patients added yet.");
+                    else allPatients.forEach(System.out::println);
 
                     System.out.println("All doctors:");
-                    if (doctorsList.isEmpty()) System.out.println("No doctors added yet.");
-                    else doctorsList.forEach(System.out::println);
+                    List<Doctor> allDoctors = doctorRepo.findAll();
+                    if (allDoctors.isEmpty()) System.out.println("No doctors added yet.");
+                    else allDoctors.forEach(System.out::println);
                 }
 
                 case 0 -> {

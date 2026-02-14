@@ -21,12 +21,16 @@ public class UrgentBookingService {
     }
 
     public Appointment bookNextAvailable(int patientId, int doctorId) {
-        LocalDateTime nextSlot = LocalDateTime.now();
+        LocalDateTime nextSlot = LocalDateTime.now()
+                .withSecond(0)
+                .withNano(0);
+
 
 
         while (repo.exists(doctorId, nextSlot)) {
 
             nextSlot = nextSlot.plusMinutes(30);
+            
 
         }
 
